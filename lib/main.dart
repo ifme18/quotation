@@ -14,14 +14,14 @@ class QuotationScreen extends StatefulWidget {
 class _QuotationScreenState extends State<QuotationScreen> {
   final _recipientController = TextEditingController();
   final _signatoryController = TextEditingController();
-  final _paymentTermsController = TextEditingController(); // New controller
+  final _paymentTermsController = TextEditingController();
 
   List<Map<String, dynamic>> items = [
     {'item': '', 'description': '', 'quantity': 1, 'unitCost': 0.0, 'amount': 0.0},
   ];
 
   DateTime _quotationDate = DateTime.now();
-  double _totalAmount = 0.0; // Variable to store total amount
+  double _totalAmount = 0.0;
 
   @override
   Widget build(BuildContext context) {
@@ -31,15 +31,14 @@ class _QuotationScreenState extends State<QuotationScreen> {
           'Create Quotation',
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Colors.blueGrey[100], // Light blue-gray background
+        backgroundColor: Colors.blueGrey[100],
       ),
       body: Container(
         padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-        color: Colors.blueGrey[50], // Slightly lighter background
+        color: Colors.blueGrey[50],
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // Recipient input field
               TextFormField(
                 controller: _recipientController,
                 decoration: InputDecoration(
@@ -52,8 +51,6 @@ class _QuotationScreenState extends State<QuotationScreen> {
                 ),
               ),
               SizedBox(height: 10),
-
-              // Payment Terms input field
               TextFormField(
                 controller: _paymentTermsController,
                 decoration: InputDecoration(
@@ -66,20 +63,12 @@ class _QuotationScreenState extends State<QuotationScreen> {
                 ),
               ),
               SizedBox(height: 10),
-
-              // Horizontal divider
               Divider(color: Colors.grey[400]),
-
-              // Data Table
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: _buildDataTable(),
               ),
-
-              // Horizontal divider
               Divider(color: Colors.grey[400]),
-
-              // Display total amount
               Align(
                 alignment: Alignment.centerRight,
                 child: Text(
@@ -87,10 +76,7 @@ class _QuotationScreenState extends State<QuotationScreen> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
-
               SizedBox(height: 10),
-
-              // Add New Item Button
               ElevatedButton(
                 onPressed: _addNewItem,
                 child: Text('Add New Item'),
@@ -98,13 +84,10 @@ class _QuotationScreenState extends State<QuotationScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10.0),
                   ),
-                  backgroundColor: Colors.teal[400], // Teal button color
+                  backgroundColor: Colors.teal[400],
                 ),
               ),
-
               SizedBox(height: 10),
-
-              // Signatory input field
               TextFormField(
                 controller: _signatoryController,
                 decoration: InputDecoration(
@@ -117,8 +100,6 @@ class _QuotationScreenState extends State<QuotationScreen> {
                 ),
               ),
               SizedBox(height: 20),
-
-              // Save and Share Quotation Buttons
               ElevatedButton(
                 onPressed: _generateAndSavePdf,
                 child: Text('Save Quotation Locally'),
@@ -126,7 +107,7 @@ class _QuotationScreenState extends State<QuotationScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10.0),
                   ),
-                  backgroundColor: Colors.teal[400], // Teal button color
+                  backgroundColor: Colors.teal[400],
                 ),
               ),
               SizedBox(height: 10),
@@ -137,7 +118,7 @@ class _QuotationScreenState extends State<QuotationScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10.0),
                   ),
-                  backgroundColor: Colors.teal[400], // Teal button color
+                  backgroundColor: Colors.teal[400],
                 ),
               ),
             ],
@@ -213,7 +194,7 @@ class _QuotationScreenState extends State<QuotationScreen> {
     });
   }
 
-  Future<void> _generateAndSavePdf() async {
+  Future<String> _generateAndSavePdf() async {
     final pdf = pw.Document();
     double totalAmount = 0;
 
@@ -224,12 +205,13 @@ class _QuotationScreenState extends State<QuotationScreen> {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              pw.Text('Quotation', style: pw.TextStyle(fontSize: 24)),
+              // Letterhead
+              _buildLetterHead(),
               pw.SizedBox(height: 10),
               pw.Text('To: ${_recipientController.text}'),
               pw.Text('Date: ${_quotationDate.toString().substring(0, 10)}'),
               pw.SizedBox(height: 10),
-              pw.Text('Payment Terms: ${_paymentTermsController.text}'), // Add payment terms
+              pw.Text('Payment Terms: ${_paymentTermsController.text}'),
               pw.SizedBox(height: 20),
               pw.Table.fromTextArray(
                 headers: ['Item', 'Description', 'Quantity', 'Unit Cost (Ksh)', 'Amount (Ksh)'],
@@ -248,6 +230,8 @@ class _QuotationScreenState extends State<QuotationScreen> {
               pw.Text('Total Amount: Ksh ${totalAmount.toStringAsFixed(2)}'),
               pw.SizedBox(height: 20),
               pw.Text('Signatory: ${_signatoryController.text}'),
+              pw.SizedBox(height: 20),
+              _buildFooter(), // Footer section
             ],
           );
         },
@@ -256,23 +240,48 @@ class _QuotationScreenState extends State<QuotationScreen> {
 
     // Save the file locally
     final output = await getApplicationDocumentsDirectory();
-    final file = File("${output.path}/quotation_${DateTime.now().millisecondsSinceEpoch}.pdf");
+    final filePath = "${output.path}/quotation_${DateTime.now().millisecondsSinceEpoch}.pdf";
+    final file = File(filePath);
     await file.writeAsBytes(await pdf.save());
 
-    // Show a snackbar indicating the file has been saved
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Quotation saved at: ${file.path}')),
+    return filePath;
+  }
+
+  // Letterhead section
+  pw.Widget _buildLetterHead() {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text(
+          'GEOPLAN KENYA LTD',
+          style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
+        ),
+        pw.Text('Kigio Plaza - Thika, 1st floor, No. K.1.16'),
+        pw.Text('Uniafric House - Nairobi, 4th floor, No. 458'),
+        pw.Text('P.O Box 522 - 00100 Thika'),
+        pw.Text('Tel: +254 721 256 135 / +254 724 404 133'),
+        pw.Text('Email: geoplankenya1@gmail.com, info@geoplankenya.co.ke'),
+        pw.Text('www.geoplankenya.co.ke'),
+      ],
+    );
+  }
+
+  // Footer section
+  pw.Widget _buildFooter() {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Divider(),
+        pw.Text(
+          'GEOPLAN KENYA LTD - Registered Land & Engineering Surveyors, Planning & Land Consultants',
+          style: pw.TextStyle(fontSize: 10, fontStyle: pw.FontStyle.italic),
+        ),
+      ],
     );
   }
 
   Future<void> _sharePdf() async {
-    final output = await getApplicationDocumentsDirectory();
-    final filePath = "${output.path}/quotation_${DateTime.now().millisecondsSinceEpoch}.pdf";
-
-    // Generate PDF and save it
-    await _generateAndSavePdf();
-
-    // Share the PDF via available platforms (WhatsApp, Gmail, etc.)
+    final filePath = await _generateAndSavePdf();
     await Share.shareFiles([filePath], text: 'Here is the quotation.');
   }
 }
@@ -280,3 +289,5 @@ class _QuotationScreenState extends State<QuotationScreen> {
 void main() {
   runApp(MaterialApp(home: QuotationScreen()));
 }
+
+
